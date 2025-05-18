@@ -1,17 +1,17 @@
 import mongoose, { Document, Model, Schema } from 'mongoose';
 
-interface IPost extends Document {
+export interface IPost extends Document {
     user: mongoose.Types.ObjectId;
     mediaUrl: string;
     mediaType: 'image' | 'video';
     caption?: string;
     likes: mongoose.Types.ObjectId[]; // Array of User IDs who liked the post
     comments: mongoose.Types.ObjectId[]; // Array of Comment IDs associated with the post
+    shareCount: number;
     createdAt: Date;
-    status: 'pending' | 'approved' | 'rejected'; // Moderation status
+    status: 'pending' | 'approved' | 'rejected';
 }
 
-// Define the Post schema
 const PostSchema: Schema<IPost> = new mongoose.Schema({
     user: {
         type: mongoose.Schema.Types.ObjectId,
@@ -39,6 +39,10 @@ const PostSchema: Schema<IPost> = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Comment'
     }],
+    shareCount: {
+        type: Number,
+        default: 0
+    },
     createdAt: {
         type: Date,
         default: Date.now

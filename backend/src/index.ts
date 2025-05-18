@@ -11,8 +11,7 @@ dotenv.config();
 
 import { configurePassport } from './passport/passport';
 import { configureAuthRoutes } from './routes/auth';
-//TODO
-//import { configureContentRoutes } from './routes/content';
+import { configureContentRoutes } from './routes/content';
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -27,12 +26,10 @@ mongoose.connect(dbUrl)
         process.exit(1);
     });
 
-// Middleware setup
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(cookieParser());
 
-// Session configuration
 const sessionOptions: expressSession.SessionOptions = {
     secret: process.env.SESSION_SECRET as string,
     resave: false,
@@ -58,8 +55,7 @@ app.get('/', (req: Request, res: Response) => {
 
 app.use('/api/auth', configureAuthRoutes(passport, express.Router()));
 
-//TODO
-//app.use('/api/content', configureContentRoutes(passport, express.Router()));
+app.use('/api/content', configureContentRoutes(passport, express.Router()));
 
 app.listen(port, () => {
     console.log(`Server is listening on port ${port}`);

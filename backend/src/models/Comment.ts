@@ -1,6 +1,6 @@
 import mongoose, { Document, Model, Schema } from 'mongoose';
 
-interface IComment extends Document {
+export interface IComment extends Document {
     user: mongoose.Types.ObjectId;
     post: mongoose.Types.ObjectId;
     text: string;
