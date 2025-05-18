@@ -1,0 +1,80 @@
+h2 {
+    color: #333;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.user-list-section,
+.edit-user-section {
+    max-width: 600px;
+    margin: 0 auto 20px auto;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.user-list-section h3,
+.edit-user-section h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #555;
+}
+
+.user-list-section ul {
+    list-style: none;
+    padding: 0;
+}
+
+.user-list-section li {
+    border-bottom: 1px solid #eee;
+    padding: 10px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.user-list-section li:last-child {
+    border-bottom: none;
+}
+
+.user-list-section button,
+.edit-user-section button {
+    padding: 5px 10px;
+    margin-left: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: #eee;
+    cursor: pointer;
+}
+
+.user-list-section button:hover,
+.edit-user-section button:hover {
+    background-color: #ddd;
+}
+
+.edit-user-section div {
+    margin-bottom: 15px;
+}
+
+.edit-user-section label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.edit-user-section select {
+     width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+
+div[style="color: red;"] {
+    text-align: center;
+    margin-bottom: 15px;
+    font-weight: bold;
+}

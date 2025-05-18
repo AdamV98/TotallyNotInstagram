@@ -1,0 +1,59 @@
+<div *ngIf="errorMessage" style="color: red;">
+  Error: {{ errorMessage }}
+</div>
+
+<h2>Post Detail</h2>
+<div *ngIf="post" class="post-card">
+  <h3>
+      Post by {{ post.user.email }}
+      <span *ngIf="post.user.role === 'influencer'" style="font-weight: bold; color: purple;">(Influencer)</span>
+  </h3>
+  <img *ngIf="post.mediaType === 'image'" [src]="'http://localhost:5000/' + post.mediaUrl" alt="Post Image">
+  <video *ngIf="post.mediaType === 'video'" controls [src]="'http://localhost:5000/' + post.mediaUrl"></video>
+  <p>{{ post.caption }}</p>
+  <p>Likes: {{ post.likes.length || 0 }} | Shares: {{ post.shareCount || 0 }} | Comments: {{ post.comments.length || 0 }}</p>
+
+  <div *ngIf="authService.isLoggedIn() && !isSharedView">
+      <button (click)="toggleLike()">
+          {{ hasLiked(post) ? 'Unlike' : 'Like' }}
+      </button>
+      <button (click)="sharePost()">Share</button>
+  </div>
+
+  <button *ngIf="canEditDeletePost(post) && !isSharedView" (click)="deletePost(post._id)">Delete Post</button>
+
+  <div class="comments-section">
+    <h3>Comments</h3>
+    <div *ngIf="post.comments?.length === 0">
+      No comments yet.
+    </div>
+    <div *ngFor="let comment of post.comments">
+      <div *ngIf="editingComment?._id !== comment._id">
+          <p><strong>{{ comment.user.email || 'Unknown User' }}:</strong> {{ comment.text }}</p>
+          <button *ngIf="canEditDeleteComment(comment) && !isSharedView" (click)="startEditingComment(comment)">Edit</button>
+          <button *ngIf="canEditDeleteComment(comment) && !isSharedView" (click)="deleteComment(comment._id)">Delete</button>
+      </div>
+
+      <div *ngIf="editingComment?._id === comment._id && !isSharedView">
+          <h4>Edit Comment</h4>
+          <form (ngSubmit)="saveComment()">
+              <div>
+                  <textarea [(ngModel)]="updatedCommentText" name="updatedCommentText" required></textarea>
+              </div>
+              <button type="submit">Save</button>
+              <button type="button" (click)="cancelEditingComment()">Cancel</button>
+          </form>
+      </div>
+    </div>
+
+    <div *ngIf="authService.isLoggedIn() && !editingComment && !isSharedView">
+        <h4>Add a Comment</h4>
+        <form (ngSubmit)="addComment()">
+          <div>
+            <textarea [(ngModel)]="newCommentText" name="newCommentText" required placeholder="Write a comment..."></textarea>
+          </div>
+          <button type="submit">Post Comment</button>
+        </form>
+     </div>
+  </div>
+</div>

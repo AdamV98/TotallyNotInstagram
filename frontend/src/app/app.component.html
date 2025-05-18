@@ -1,0 +1,16 @@
+<nav>
+  <ul>
+    <li><a routerLink="/feed" routerLinkActive="active">Feed</a></li>
+    <li *ngIf="!isLoggedIn()"><a routerLink="/register" routerLinkActive="active">Register</a></li>
+    <li *ngIf="!isLoggedIn()"><a routerLink="/login" routerLinkActive="active">Login</a></li>
+    <li *ngIf="isLoggedIn()"><a routerLink="/profile" routerLinkActive="active">Profile</a></li>
+    <li *ngIf="isLoggedIn()"><a routerLink="/upload" routerLinkActive="active">Upload</a></li>
+    <li *ngIf="isLoggedIn() && isAdmin()"><a routerLink="/admin/users" routerLinkActive="active">Admin Users</a></li>
+    <li *ngIf="isLoggedIn() && isAdmin()"><a routerLink="/admin/moderation" routerLinkActive="active">Admin Moderation</a></li>
+    <li *ngIf="isLoggedIn()"><button (click)="logout()">Logout</button></li>
+  </ul>
+</nav>
+
+<div class="container">
+  <h1>{{ title }}</h1>
+  <router-outlet></router-outlet> </div>

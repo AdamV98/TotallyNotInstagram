@@ -1,0 +1,28 @@
+<h2>Feed</h2>
+
+<div *ngIf="errorMessage" style="color: red;">
+  Error: {{ errorMessage }}
+</div>
+
+<div *ngIf="posts.length === 0 && !errorMessage">
+  No approved posts found.
+</div>
+
+<div *ngFor="let post of posts" class="post-card">
+  <h3>
+    Post by {{ post.user.email }}
+    <span *ngIf="post.user.role === 'influencer'" style="font-weight: bold; color: purple;">(Influencer)</span>
+  </h3>
+  <img *ngIf="post.mediaType === 'image'" [src]="'http://localhost:5000/' + post.mediaUrl" alt="Post Image">
+  <video *ngIf="post.mediaType === 'video'" controls [src]="'http://localhost:5000/' + post.mediaUrl"></video>
+  <p>{{ post.caption }}</p>
+  <p>Likes: {{ post.likes.length || 0 }} | Shares: {{ post.shareCount || 0 }} | Comments: {{ post.comments.length || 0 }}</p>
+  <a [routerLink]="['/posts', post._id]">View Details</a>
+
+  <button (click)="toggleLike(post)">
+      {{ hasLiked(post) ? 'Unlike' : 'Like' }}
+  </button>
+
+  <button (click)="sharePost(post)">Share</button>
+
+  </div>

@@ -1,0 +1,21 @@
+<h2>Upload New Post</h2>
+
+<div *ngIf="errorMessage" style="color: red;">
+  Error: {{ errorMessage }}
+</div>
+
+<div *ngIf="uploadSuccess" style="color: green;">
+  Upload successful!
+</div>
+
+<form (ngSubmit)="onSubmit()">
+  <div>
+    <label for="media">Select File:</label>
+    <input type="file" id="media" (change)="onFileSelected($event)" required>
+  </div>
+  <div>
+    <label for="caption">Caption (Optional):</label>
+    <textarea id="caption" [(ngModel)]="caption" name="caption"></textarea>
+  </div>
+  <button type="submit" [disabled]="!selectedFile">Upload</button>
+</form>

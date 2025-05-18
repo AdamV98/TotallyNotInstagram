@@ -60,22 +60,26 @@ export const configureAuthRoutes = (passport: PassportStatic, router: Router): R
     router.post('/login', (req: Request, res: Response, next: NextFunction) => {
         passport.authenticate('local', (error: any, user: any, info: any) => {
             if (error) {
-                console.error('Error during authentication:', error);
                 return res.status(500).send('Internal server error.');
             }
             if (!user) {
                 return res.status(401).send(info.message);
             }
-
             req.login(user, (err) => {
                 if (err) {
-                    console.error('Error during login:', err);
                     return res.status(500).send('Error logging in.');
                 }
-                res.status(200).send({
-                    _id: user._id,
-                    email: user.email,
-                    role: user.role
+
+                // Explicitly save the session after login
+                req.session.save((saveErr) => {
+                    if (saveErr) {
+                        return res.status(500).send('Error saving session.');
+                    }
+                    res.status(200).send({
+                        _id: user._id,
+                        email: user.email,
+                        role: user.role
+                    });
                 });
             });
         })(req, res, next);
@@ -177,7 +181,6 @@ export const configureAuthRoutes = (passport: PassportStatic, router: Router): R
         const userId = req.params.userId;
         const { role } = req.body;
 
-        // Validate the new role
         if (!role || !['user', 'influencer', 'admin'].includes(role)) {
              return res.status(400).send('Invalid role provided. Must be "user", "influencer", or "admin".');
         }
@@ -204,7 +207,6 @@ export const configureAuthRoutes = (passport: PassportStatic, router: Router): R
         const userIdToDelete = req.params.userId;
         const adminUser = req.user as IUser;
 
-        // Prevent admin from deleting their own account through this endpoint
         if (userIdToDelete === (adminUser._id as mongoose.Types.ObjectId).toString()) {
              return res.status(400).send('Admins cannot delete their own account through this endpoint.');
         }
@@ -217,11 +219,9 @@ export const configureAuthRoutes = (passport: PassportStatic, router: Router): R
 
                 console.log(`User deleted: ${deletedUser.email}`);
 
-                // Delete all content associated with this user
                 return Post.find({ user: userIdToDelete })
                     .then((posts: IPost[]) => {
                         const deletePostPromises = posts.map(post => {
-                            // Delete associated media file
                             if (post.mediaUrl) {
                                 fs.unlink(post.mediaUrl, (err) => {
                                     if (err) {
@@ -231,10 +231,8 @@ export const configureAuthRoutes = (passport: PassportStatic, router: Router): R
                                     }
                                 });
                             }
-                            // Delete associated comments
                             return Comment.deleteMany({ post: post._id });
                         });
-                        // Execute all comment deletion promises for the user's posts
                         return Promise.all(deletePostPromises);
                     })
                     .then(() => {
@@ -260,6 +258,7 @@ export const configureAuthRoutes = (passport: PassportStatic, router: Router): R
             })
             .catch(error => {
                 console.error('Error deleting user (admin):', error);
+                // Handle custom rejected promises
                  if (error.status && error.message) {
                     return res.status(error.status).send(error.message);
                  }
@@ -269,6 +268,7 @@ export const configureAuthRoutes = (passport: PassportStatic, router: Router): R
                 res.status(500).send('Error deleting user.');
             });
     });
+
 
     return router;
 };

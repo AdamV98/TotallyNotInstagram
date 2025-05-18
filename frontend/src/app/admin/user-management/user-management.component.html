@@ -1,0 +1,36 @@
+<h2>Admin - User Management</h2>
+
+<div *ngIf="errorMessage" style="color: red;">
+  Error: {{ errorMessage }}
+</div>
+
+<div *ngIf="authService.getCurrentUserRole() === 'admin' && !errorMessage">
+  <div *ngIf="!selectedUser">
+    <h3>All Users</h3>
+    <div *ngIf="users.length === 0 && !errorMessage">
+      No users found.
+    </div>
+    <ul>
+      <li *ngFor="let user of users">
+        {{ user.email }} ({{ user.role }})
+        <button (click)="selectUser(user)">View/Edit</button>
+        <button (click)="deleteUser(user._id)">Delete</button>
+      </li>
+    </ul>
+  </div>
+
+  <div *ngIf="selectedUser">
+    <h3>Edit User: {{ selectedUser.email }}</h3>
+    <p><strong>ID:</strong> {{ selectedUser._id }}</p>
+    <div>
+      <label for="role">Role:</label>
+      <select id="role" [(ngModel)]="updatedUserRole" name="updatedUserRole">
+        <option value="user">User</option>
+        <option value="influencer">Influencer</option>
+        <option value="admin">Admin</option>
+      </select>
+    </div>
+    <button (click)="updateUserRole()">Save Role</button>
+    <button (click)="cancelEdit()">Cancel</button>
+  </div>
+</div>

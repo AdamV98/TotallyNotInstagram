@@ -1,0 +1,96 @@
+<div *ngIf="errorMessage" style="color: red;">
+  Error: {{ errorMessage }}
+</div>
+
+<div *ngIf="profileUser">
+  <h2>{{ isViewingMyProfile ? 'My Profile' : profileUser.email + "'s Profile" }}</h2>
+
+  <div *ngIf="!isEditingProfile">
+    <p><strong>Email:</strong> {{ profileUser.email }}</p>
+    <p><strong>Role:</strong> {{ profileUser.role }}</p>
+    <button *ngIf="isViewingMyProfile" (click)="toggleEditProfile()">Edit Profile</button>
+
+    <button *ngIf="!isViewingMyProfile && authService.isLoggedIn()" (click)="toggleFollow()">
+        {{ isFollowing ? 'Unfollow' : 'Follow' }}
+    </button>
+
+  </div>
+
+  <div *ngIf="isEditingProfile && isViewingMyProfile">
+    <h3>Edit Profile</h3>
+    <form (ngSubmit)="saveProfile()">
+      <div>
+        <label for="email">Email:</label>
+        <input type="email" id="email" [(ngModel)]="updatedEmail" name="updatedEmail" required>
+      </div>
+      <button type="submit">Save Changes</button>
+      <button type="button" (click)="cancelEditProfile()">Cancel</button>
+    </form>
+  </div>
+
+  <div>
+      <p>
+          Followers: {{ followersCount }}
+          <button *ngIf="followersCount > 0" (click)="toggleShowFollowers()">
+              {{ showFollowersList ? 'Hide' : 'Show' }}
+          </button>
+      </p>
+      <div *ngIf="showFollowersList && followersList.length > 0">
+          <h4>Followers:</h4>
+          <ul>
+              <li *ngFor="let follow of followersList">
+                  <a [routerLink]="['/users', follow.follower._id]">{{ follow.follower.email }}</a>
+              </li>
+          </ul>
+      </div>
+
+      <p>
+          Following: {{ followingCount }}
+           <button *ngIf="followingCount > 0" (click)="toggleShowFollowing()">
+              {{ showFollowingList ? 'Hide' : 'Show' }}
+          </button>
+      </p>
+       <div *ngIf="showFollowingList && followingList.length > 0">
+           <h4>Following:</h4>
+           <ul>
+               <li *ngFor="let follow of followingList">
+                   <a [routerLink]="['/users', follow.following._id]">{{ follow.following.email }}</a>
+               </li>
+           </ul>
+       </div>
+  </div>
+
+
+  <h3>{{ isViewingMyProfile ? 'My Posts' : profileUser.email + "'s Posts" }}</h3>
+   <div *ngIf="userPosts.length === 0">
+    No posts yet.
+  </div>
+   <div *ngFor="let post of userPosts" class="post-card">
+       <div *ngIf="editingPost?._id !== post._id">
+           <h4>
+               {{ post.caption || 'Untitled Post' }}
+               <span *ngIf="post.user.role === 'influencer'" style="font-weight: bold; color: purple;">(Influencer)</span>
+           </h4>
+            <img *ngIf="post.mediaType === 'image'" [src]="'http://localhost:5000/' + post.mediaUrl" alt="Post Image">
+           <video *ngIf="post.mediaType === 'video'" controls [src]="'http://localhost:5000/' + post.mediaUrl"></video>
+            <p>Status: {{ post.status }}</p>
+            <p>Likes: {{ post.likes.length || 0 }} | Shares: {{ post.shareCount || 0 }} | Comments: {{ post.comments.length || 0 }}</p>
+             <a [routerLink]="['/posts', post._id]">View Details</a>
+            <button *ngIf="canEditDeletePost(post)" (click)="startEditingPost(post)">Edit</button>
+            <button *ngIf="canEditDeletePost(post)" (click)="deletePost(post._id)">Delete</button>
+       </div>
+
+       <div *ngIf="editingPost?._id === post._id">
+           <h3>Edit Post</h3>
+           <form (ngSubmit)="savePost()">
+               <div>
+                   <label for="postCaption">Caption:</label>
+                   <textarea id="postCaption" [(ngModel)]="updatedPostCaption" name="updatedPostCaption"></textarea>
+               </div>
+               <button type="submit">Save</button>
+               <button type="button" (click)="cancelEditingPost()">Cancel</button>
+           </form>
+       </div>
+   </div>
+
+</div>

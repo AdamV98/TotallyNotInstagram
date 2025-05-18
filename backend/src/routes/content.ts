@@ -21,7 +21,6 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
-// Middleware to check if the user is an admin
 const isAdmin = (req: Request, res: Response, next: NextFunction) => {
     const user = req.user as IUser;
     if (user && user.role === 'admin') {
@@ -31,9 +30,45 @@ const isAdmin = (req: Request, res: Response, next: NextFunction) => {
     }
 };
 
+// Content-Related Routes
 export const configureContentRoutes = (passport: PassportStatic, router: Router): Router => {
 
+    // --- Public Route for Shared Posts (DOES NOT REQUIRE AUTHENTICATION) ---
+
+    // GET /api/content/shared/:postId - Get a specific approved post by ID (Public)
+    router.get('/shared/:postId', (req: Request, res: Response) => {
+        const postId = req.params.postId;
+
+        Post.findById(postId)
+            .populate('user', 'email role')
+            .populate({
+                path: 'comments',
+                populate: {
+                    path: 'user',
+                    select: 'email role'
+                }
+            })
+            .then((post: IPost | null) => {
+                if (!post || post.status !== 'approved') {
+                    return res.status(404).send('Post not found or not available for sharing.');
+                }
+
+                res.status(200).send(post);
+            })
+            .catch(error => {
+                console.error('Error fetching shared post:', error);
+                if (error.kind === 'ObjectId') {
+                    return res.status(400).send('Invalid Post ID format.');
+                }
+                res.status(500).send('Error fetching shared post.');
+            });
+    });
+
+
+    // --- Authenticated Routes (REQUIRE AUTHENTICATION) ---
+    // All routes below this middleware require a valid session cookie
     router.use(passport.authenticate('session'));
+
 
     // POST /api/content/upload - Upload a new image or video (Create Post)
     router.post('/upload', upload.single('media'), (req: Request, res: Response) => {
@@ -103,6 +138,20 @@ export const configureContentRoutes = (passport: PassportStatic, router: Router)
             .catch(error => {
                 console.error('Error fetching posts:', error);
                 res.status(500).send('Error fetching posts.');
+            });
+    });
+
+    // GET /api/content/pending-moderation - Get posts pending moderation (Admin only)
+    router.get('/pending-moderation', isAdmin, (req: Request, res: Response) => {
+        Post.find({ status: 'pending' })
+            .populate('user', 'email role')
+            .sort({ createdAt: 1 })
+            .then((posts: IPost[]) => {
+                res.status(200).send(posts);
+            })
+            .catch(error => {
+                console.error('Error fetching pending moderation posts:', error);
+                res.status(500).send('Error fetching pending moderation posts.');
             });
     });
 
@@ -188,7 +237,7 @@ export const configureContentRoutes = (passport: PassportStatic, router: Router)
                 console.error('Error updating post:', error);
                  if (error.status && error.message) {
                     return res.status(error.status).send(error.message);
-                 }
+                }
                 if (error.kind === 'ObjectId') {
                     return res.status(400).send('Invalid Post ID format.');
                 }
@@ -216,7 +265,6 @@ export const configureContentRoutes = (passport: PassportStatic, router: Router)
                     return Promise.reject({ status: 403, message: 'Forbidden: You can only delete your own posts.' });
                 }
 
-                // Delete the associated media file from the file system
                 if (post.mediaUrl) {
                     fs.unlink(post.mediaUrl, (err) => {
                         if (err) {
@@ -226,12 +274,9 @@ export const configureContentRoutes = (passport: PassportStatic, router: Router)
                         }
                     });
                 }
-
-                // Delete all comments associated with this post
                 return Comment.deleteMany({ post: postId })
                     .then(() => {
                         console.log(`Deleted comments for post: ${postId}`);
-                        // After deleting comments, delete the post document
                         return post.deleteOne();
                     });
             })
@@ -274,7 +319,6 @@ export const configureContentRoutes = (passport: PassportStatic, router: Router)
 
         newComment.save()
             .then((comment: IComment) => {
-                // Find the post and add the comment ID to its comments array
                 return Post.findByIdAndUpdate(
                     postId,
                     { $push: { comments: comment._id } },
@@ -305,7 +349,7 @@ export const configureContentRoutes = (passport: PassportStatic, router: Router)
             });
     });
 
-    // Update a comment
+    // Update a comment (Update Comment)
     router.put('/comment/:commentId', (req: Request, res: Response) => {
         const commentId = req.params.commentId;
         const user = req.user as IUser;
@@ -350,7 +394,7 @@ export const configureContentRoutes = (passport: PassportStatic, router: Router)
             });
     });
 
-    // DELETE /api/content/comment/:commentId - Delete a comment
+    // DELETE /api/content/comment/:commentId - Delete a comment (Delete Comment)
     router.delete('/comment/:commentId', (req: Request, res: Response) => {
         const commentId = req.params.commentId;
         const user = req.user as IUser;
@@ -359,7 +403,7 @@ export const configureContentRoutes = (passport: PassportStatic, router: Router)
         }
         const userId: mongoose.Types.ObjectId = new mongoose.Types.ObjectId(user._id as any);
 
-        let commentPostId: mongoose.Types.ObjectId | null = null; // Variable to store the post ID
+        let commentPostId: mongoose.Types.ObjectId | null = null;
 
         Comment.findById(commentId)
             .then((comment: IComment | null) => {
@@ -369,15 +413,12 @@ export const configureContentRoutes = (passport: PassportStatic, router: Router)
 
                 commentPostId = comment.post as mongoose.Types.ObjectId;
 
-                // Authorization check: Only comment owner, post owner, or admin can delete
                 return Post.findById(commentPostId).then((post: IPost | null) => {
                      if (!post) {
-                         // If the post is already gone, check if the user is the comment owner or admin
                          if (comment.user.toString() !== userId.toString() && user.role !== 'admin') {
                              return Promise.reject({ status: 403, message: 'Forbidden: You can only delete your own comments or comments on your posts (or as admin).' });
                          }
                      } else {
-                         // If the post exists, check ownership or admin role
                          if (comment.user.toString() !== userId.toString() && post.user.toString() !== userId.toString() && user.role !== 'admin') {
                              return Promise.reject({ status: 403, message: 'Forbidden: You can only delete your own comments or comments on your posts (or as admin).' });
                          }
@@ -402,7 +443,7 @@ export const configureContentRoutes = (passport: PassportStatic, router: Router)
                 console.error('Error deleting comment:', error);
                  if (error.status && error.message) {
                     return res.status(error.status).send(error.message);
-                 }
+                }
                  if (error.kind === 'ObjectId') {
                     return res.status(400).send('Invalid Comment ID format.');
                 }
@@ -670,7 +711,7 @@ export const configureContentRoutes = (passport: PassportStatic, router: Router)
     // POST /api/content/:postId/share - Increment share count for a post
     router.post('/:postId/share', (req: Request, res: Response) => {
         const postId = req.params.postId;
-        const user = req.user as IUser;
+        const user = req.user as IUser; // Ensure user is authenticated
          if (!user || !user._id) {
              return res.status(401).send('User not authenticated.');
         }
@@ -697,7 +738,6 @@ export const configureContentRoutes = (passport: PassportStatic, router: Router)
             res.status(500).send('Error sharing post.');
         });
     });
-
 
     return router;
 };

@@ -1,0 +1,75 @@
+/* Styling for admin moderation */
+h2 {
+    color: #333;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.pending-posts-section {
+    max-width: 700px;
+    margin: 0 auto 20px auto;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.pending-posts-section h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #555;
+}
+
+.post-card {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+    background-color: #f9f9f9;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.post-card h4 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: #555;
+}
+
+.post-card img,
+.post-card video {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin-bottom: 10px;
+    border-radius: 4px;
+}
+
+.post-card p {
+    margin-bottom: 10px;
+    color: #666;
+}
+
+.post-card button {
+    padding: 5px 10px;
+    margin-right: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: #eee;
+    cursor: pointer;
+}
+
+.post-card button:hover {
+    background-color: #ddd;
+}
+
+
+div[style="color: red;"] {
+    text-align: center;
+    margin-bottom: 15px;
+    font-weight: bold;
+}
+
+span[style="font-weight: bold; color: purple;"] {
+    margin-left: 5px;
+}
