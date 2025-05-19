@@ -16,7 +16,7 @@ import { configureAuthRoutes } from './routes/auth';
 import { configureContentRoutes } from './routes/content';
 
 const app = express();
-const port = process.env.PORT || 5000;
+const port = 5000;
 const dbUrl = process.env.MONGODB_URI || 'mongodb://localhost:27017/instagram_db';
 
 const allowedOrigins = ['http://localhost:4200'];

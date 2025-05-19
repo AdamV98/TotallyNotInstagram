@@ -11,9 +11,18 @@ import path from 'path';
 // Middleware to check if the user is an admin
 const isAdmin = (req: Request, res: Response, next: NextFunction) => {
     const user = req.user as IUser;
+
+    // Log the user object and role being checked
+    console.log('isAdmin middleware: Checking user req:', req.user);
+    console.log('isAdmin middleware: Checking user:', user);
+    console.log('isAdmin middleware: User role:', user?.role);
+
+
     if (user && user.role === 'admin') {
+        console.log('isAdmin middleware: Access granted.');
         next();
     } else {
+        console.warn('isAdmin middleware: Access denied. User not logged in or not admin.');
         res.status(403).send('Forbidden: Only admins can perform this action.');
     }
 };
@@ -100,8 +109,12 @@ export const configureAuthRoutes = (passport: PassportStatic, router: Router): R
         }
     });
 
+    // --- Authenticated Routes (Require Session) ---
+    router.use(passport.authenticate('session'));
+
+
     // GET /api/auth/profile - Get the profile of the currently logged-in user
-    router.get('/profile', passport.authenticate('session'), (req: Request, res: Response) => {
+    router.get('/profile', (req: Request, res: Response) => {
         const user = req.user as IUser;
         res.status(200).send({
             _id: user._id,
@@ -111,7 +124,7 @@ export const configureAuthRoutes = (passport: PassportStatic, router: Router): R
     });
 
     // PUT /api/auth/profile - Update the profile of the currently logged-in user
-    router.put('/profile', passport.authenticate('session'), (req: Request, res: Response) => {
+    router.put('/profile', (req: Request, res: Response) => {
         const user = req.user as IUser;
         const updates = req.body;
 
@@ -139,24 +152,8 @@ export const configureAuthRoutes = (passport: PassportStatic, router: Router): R
             });
     });
 
-    // --- Admin User Management Routes ---
-    // These routes require the user to be authenticated AND have the 'admin' role
-
-    // GET /api/auth/admin/users - Get a list of all users (Admin only)
-    router.get('/admin/users', passport.authenticate('session'), isAdmin, (req: Request, res: Response) => {
-        User.find({})
-            .select('-password') // Exclude passwords from the result
-            .then((users: IUser[]) => {
-                res.status(200).send(users);
-            })
-            .catch(error => {
-                console.error('Error fetching all users (admin):', error);
-                res.status(500).send('Error fetching users.');
-            });
-    });
-
-    // GET /api/auth/admin/users/:userId - Get a specific user by ID (Admin only)
-    router.get('/admin/users/:userId', passport.authenticate('session'), isAdmin, (req: Request, res: Response) => {
+    // GET /api/auth/users/:userId - Get a specific user by ID (Authenticated)
+    router.get('/users/:userId', (req: Request, res: Response) => {
         const userId = req.params.userId;
 
         User.findById(userId)
@@ -168,7 +165,7 @@ export const configureAuthRoutes = (passport: PassportStatic, router: Router): R
                 res.status(200).send(user);
             })
             .catch(error => {
-                console.error('Error fetching user by ID (admin):', error);
+                console.error('Error fetching user by ID (authenticated):', error);
                  if (error.kind === 'ObjectId') {
                     return res.status(400).send('Invalid User ID format.');
                 }
@@ -176,11 +173,28 @@ export const configureAuthRoutes = (passport: PassportStatic, router: Router): R
             });
     });
 
+    // --- Admin User Management Routes ---
+    router.use(isAdmin);
+
+    // GET /api/auth/admin/users - Get a list of all users (Admin only)
+    router.get('/admin/users', (req: Request, res: Response) => {
+        User.find({})
+            .select('-password') // Exclude passwords from the result
+            .then((users: IUser[]) => {
+                res.status(200).send(users);
+            })
+            .catch(error => {
+                console.error('Error fetching all users (admin):', error);
+                res.status(500).send('Error fetching users.');
+            });
+    });
+
     // PUT /api/auth/admin/users/:userId - Update a user's role (Admin only)
-    router.put('/admin/users/:userId', passport.authenticate('session'), isAdmin, (req: Request, res: Response) => {
+    router.put('/admin/users/:userId', (req: Request, res: Response) => {
         const userId = req.params.userId;
         const { role } = req.body;
 
+        // Validate the new role
         if (!role || !['user', 'influencer', 'admin'].includes(role)) {
              return res.status(400).send('Invalid role provided. Must be "user", "influencer", or "admin".');
         }
@@ -203,10 +217,11 @@ export const configureAuthRoutes = (passport: PassportStatic, router: Router): R
     });
 
     // DELETE /api/auth/admin/users/:userId - Delete a user account (Admin only)
-    router.delete('/admin/users/:userId', passport.authenticate('session'), isAdmin, (req: Request, res: Response) => {
+    router.delete('/admin/users/:userId', (req: Request, res: Response) => {
         const userIdToDelete = req.params.userId;
         const adminUser = req.user as IUser;
 
+        // Prevent admin from deleting their own account through this endpoint
         if (userIdToDelete === (adminUser._id as mongoose.Types.ObjectId).toString()) {
              return res.status(400).send('Admins cannot delete their own account through this endpoint.');
         }
@@ -219,6 +234,7 @@ export const configureAuthRoutes = (passport: PassportStatic, router: Router): R
 
                 console.log(`User deleted: ${deletedUser.email}`);
 
+                // Delete all content associated with this user
                 return Post.find({ user: userIdToDelete })
                     .then((posts: IPost[]) => {
                         const deletePostPromises = posts.map(post => {
@@ -258,7 +274,6 @@ export const configureAuthRoutes = (passport: PassportStatic, router: Router): R
             })
             .catch(error => {
                 console.error('Error deleting user (admin):', error);
-                // Handle custom rejected promises
                  if (error.status && error.message) {
                     return res.status(error.status).send(error.message);
                  }

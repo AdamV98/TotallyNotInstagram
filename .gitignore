@@ -24,5 +24,4 @@ backend/.idea
 *.sublime-workspace
 
 # Uploads
-backend/uploads
-
+# backend/uploads ## Commented out to be able to upload files to github for demo
