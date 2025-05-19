@@ -44,19 +44,6 @@ h2 {
     text-decoration: underline;
 }
 
-.post-card button {
-    padding: 5px 10px;
-    margin-right: 5px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    background-color: #eee;
-    cursor: pointer;
-}
-
-.post-card button:hover {
-    background-color: #ddd;
-}
-
 div[style="color: red;"] {
     text-align: center;
     margin-bottom: 15px;

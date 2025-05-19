@@ -88,16 +88,15 @@ export class AuthService {
     );
   }
 
-  // --- Admin User Management Methods ---
-  // These methods require credentials (and backend authorization checks for admin role)
-  getAllUsers(): Observable<IUser[]> {
-    return this.http.get<IUser[]>(`${this.baseUrl}/admin/users`, { withCredentials: true }).pipe(
+  getUserById(userId: string): Observable<IUser> {
+    return this.http.get<IUser>(`${this.baseUrl}/users/${userId}`, { withCredentials: true }).pipe(
        catchError(this.handleError)
     );
   }
 
-  getUserById(userId: string): Observable<IUser> {
-    return this.http.get<IUser>(`${this.baseUrl}/admin/users/${userId}`, { withCredentials: true }).pipe(
+  // --- Admin User Management Methods ---
+  getAllUsers(): Observable<IUser[]> {
+    return this.http.get<IUser[]>(`${this.baseUrl}/admin/users`, { withCredentials: true }).pipe(
        catchError(this.handleError)
     );
   }

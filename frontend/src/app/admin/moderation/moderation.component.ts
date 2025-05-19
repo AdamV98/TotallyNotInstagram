@@ -3,7 +3,6 @@ import { ContentService } from '../../services/content.service';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../services/auth.service';
 
-// Define interface for Post (should match the one in content.service.ts)
 interface IPost {
   _id: string;
   user: { _id: string; email: string; role: string };

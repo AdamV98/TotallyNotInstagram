@@ -169,7 +169,7 @@ export class ProfileComponent implements OnInit {
     this.errorMessage = null;
     if (this.isFollowing) {
       this.contentService.unfollowUser(this.profileUser._id).subscribe({
-        next: (response) => {
+        next: () => {
           this.isFollowing = false;
           this.followersCount--;
           this.followersList = this.followersList.filter(follow => follow.follower._id !== this.currentUserId);
@@ -183,6 +183,20 @@ export class ProfileComponent implements OnInit {
         next: (response) => {
           this.isFollowing = true;
           this.followersCount++;
+          this.followersList.push({
+            _id: response._id,
+            follower: {
+              _id: this.currentUserId!,
+              email: this.authService.getCurrentUser()?.email || '',
+              role: this.authService.getCurrentUser()?.role || 'user'
+            },
+            following: {
+              _id: this.profileUser!._id,
+              email: this.profileUser!.email,
+              role: this.profileUser!.role
+            },
+            createdAt: response.createdAt || new Date().toISOString()
+          });
         },
         error: (error) => {
           this.errorMessage = error.message || 'Failed to follow user.';

@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { AuthService } from '../../services/auth.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 
 interface IUser {
   _id: string;
@@ -12,7 +13,7 @@ interface IUser {
 @Component({
   selector: 'app-user-management',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './user-management.component.html',
   styleUrls: ['./user-management.component.css']
 })
@@ -46,13 +47,13 @@ export class UserManagementComponent implements OnInit {
     });
   }
 
-  selectUser(user: IUser): void {
+  public selectUser(user: IUser): void {
       this.selectedUser = user;
       this.updatedUserRole = user.role;
       this.errorMessage = null;
   }
 
-  updateUserRole(): void {
+  public updateUserRole(): void {
       if (!this.selectedUser || !this.updatedUserRole) {
           return;
       }
@@ -74,7 +75,7 @@ export class UserManagementComponent implements OnInit {
       });
   }
 
-  deleteUser(userId: string): void {
+  public deleteUser(userId: string): void {
       if (this.authService.getCurrentUser()?._id === userId) {
           this.errorMessage = 'You cannot delete your own account from here.';
           return;
@@ -96,8 +97,9 @@ export class UserManagementComponent implements OnInit {
       }
   }
 
-  cancelEdit(): void {
+  public cancelEditProfile(): void {
       this.selectedUser = null;
+      this.updatedUserRole = 'user';
       this.errorMessage = null;
   }
 }

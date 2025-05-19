@@ -1,13 +1,16 @@
 <nav>
   <ul>
-    <li><a routerLink="/feed" routerLinkActive="active">Feed</a></li>
+    <li *ngIf="isLoggedIn()"><a routerLink="/feed" routerLinkActive="active">Feed</a></li>
     <li *ngIf="!isLoggedIn()"><a routerLink="/register" routerLinkActive="active">Register</a></li>
     <li *ngIf="!isLoggedIn()"><a routerLink="/login" routerLinkActive="active">Login</a></li>
     <li *ngIf="isLoggedIn()"><a routerLink="/profile" routerLinkActive="active">Profile</a></li>
     <li *ngIf="isLoggedIn()"><a routerLink="/upload" routerLinkActive="active">Upload</a></li>
-    <li *ngIf="isLoggedIn() && isAdmin()"><a routerLink="/admin/users" routerLinkActive="active">Admin Users</a></li>
-    <li *ngIf="isLoggedIn() && isAdmin()"><a routerLink="/admin/moderation" routerLinkActive="active">Admin Moderation</a></li>
-    <li *ngIf="isLoggedIn()"><button (click)="logout()">Logout</button></li>
+    <li *ngIf="isLoggedIn() && isAdmin()"><a routerLink="/admin/users" routerLinkActive="active">All Users</a></li>
+    <li *ngIf="isLoggedIn() && isAdmin()"><a routerLink="/admin/moderation" routerLinkActive="active">Moderation</a></li>
+    <li *ngIf="isLoggedIn()">
+        <span>Logged in as: {{ currentUser?.email }}</span>
+    </li>
+    <li *ngIf="isLoggedIn()"><button (click)="logout()" [disabled]="isLoggingOut">Logout</button></li>
   </ul>
 </nav>
 

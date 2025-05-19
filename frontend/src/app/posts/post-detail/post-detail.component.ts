@@ -1,10 +1,11 @@
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ContentService } from '../../services/content.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
 import { tap } from 'rxjs/operators';
+import { combineLatest } from 'rxjs';
 
 interface IPost {
   _id: string;
@@ -27,10 +28,17 @@ interface IComment {
   createdAt: string;
 }
 
+interface IFollower {
+  _id: string;
+  follower: { _id: string; email: string; role: string };
+  following: { _id: string; email: string; role: string };
+  createdAt: string;
+}
+
 @Component({
   selector: 'app-post-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './post-detail.component.html',
   styleUrls: ['./post-detail.component.css']
 })
@@ -45,6 +53,9 @@ export class PostDetailComponent implements OnInit {
 
   isSharedView = false;
 
+  followingList: IFollower[] = [];
+
+
   constructor(
     private route: ActivatedRoute,
     private contentService: ContentService,
@@ -54,8 +65,12 @@ export class PostDetailComponent implements OnInit {
 
   ngOnInit(): void {
      this.currentUserId = this.authService.getCurrentUser()?._id || null;
+
     this.isSharedView = this.route.snapshot.url.some(segment => segment.path === 'shared-posts');
 
+    if (this.currentUserId) {
+        this.loadFollowingList(this.currentUserId);
+    }
 
     this.route.params.subscribe(params => {
       const postId = params['postId'];
@@ -104,6 +119,18 @@ export class PostDetailComponent implements OnInit {
         });
    }
 
+   loadFollowingList(userId: string): void {
+       this.contentService.getFollowing(userId).subscribe({
+           next: (following) => {
+               this.followingList = following;
+               console.log('PostDetailComponent: Loaded following list', following);
+           },
+           error: (error) => {
+               console.error('PostDetailComponent: Error loading following list', error);
+           }
+       });
+   }
+
 
   addComment(): void {
     if (!this.newCommentText || !this.post) {
@@ -125,21 +152,25 @@ export class PostDetailComponent implements OnInit {
     });
   }
 
-  canEditDeleteComment(comment: IComment): boolean {
+  public canEditDeleteComment(comment: IComment): boolean {
       const currentUser = this.authService.getCurrentUser();
-      if (!currentUser) {
+      if (!currentUser || !this.post) {
           return false;
       }
-      return comment.user._id === currentUser._id || currentUser.role === 'admin';
+      return (
+          comment.user._id === currentUser._id ||
+          currentUser.role === 'admin' ||
+          this.post.user._id === currentUser._id
+      );
   }
 
-  startEditingComment(comment: IComment): void {
+  public startEditingComment(comment: IComment): void {
       this.editingComment = comment;
       this.updatedCommentText = comment.text;
       this.errorMessage = null;
   }
 
-  saveComment(): void {
+  public saveComment(): void {
       if (!this.editingComment || !this.updatedCommentText) {
           return;
       }
@@ -163,13 +194,13 @@ export class PostDetailComponent implements OnInit {
       });
   }
 
-  cancelEditingComment(): void {
+  public cancelEditingComment(): void {
       this.editingComment = null;
       this.updatedCommentText = '';
       this.errorMessage = null;
   }
 
-  deleteComment(commentId: string): void {
+  public deleteComment(commentId: string): void {
       if (confirm('Are you sure you want to delete this comment?')) {
           this.errorMessage = null;
           this.contentService.deleteComment(commentId).subscribe({
@@ -188,14 +219,14 @@ export class PostDetailComponent implements OnInit {
       }
   }
 
-  hasLiked(post: IPost): boolean {
+  public hasLiked(post: IPost): boolean {
       if (!this.currentUserId || !post.likes) {
           return false;
       }
       return post.likes.includes(this.currentUserId);
   }
 
-  toggleLike(): void {
+  public toggleLike(): void {
       if (!this.currentUserId || !this.post) {
           console.warn('User not logged in or post not loaded to like/unlike.');
           return;
@@ -235,22 +266,30 @@ export class PostDetailComponent implements OnInit {
       }
   }
 
-  sharePost(): void {
+  public sharePost(): void {
       if (!this.authService.isLoggedIn() || !this.post) {
-           console.warn('User not logged in or post not loaded to share.');
-           return;
+          console.warn('User not logged in or post not loaded to share.');
+          return;
       }
       console.log('Sharing post', this.post._id);
 
-       this.contentService.sharePost(this.post._id).subscribe({
+      this.contentService.sharePost(this.post._id).subscribe({
           next: (response) => {
               console.log('Post shared (count incremented)', response);
               if (this.post) {
                   this.post.shareCount = response.shareCount;
               }
-              const shareableUrl = `${window.location.origin}/shared-posts/${this.post?._id}`;
-              console.log('Shareable URL:', shareableUrl);
-              alert(`Shareable URL: ${shareableUrl}`);
+              const shareableUrl = `${window.location.origin}/shared-posts/${this.post!._id}`;
+              if (navigator.clipboard) {
+                  navigator.clipboard.writeText(shareableUrl).then(() => {
+                      alert('Shareable URL copied to clipboard!');
+                  }, () => {
+                      alert(`Shareable URL: ${shareableUrl}`);
+                  });
+              } else {
+                  // Fallback for older browsers
+                  alert(`Shareable URL: ${shareableUrl}`);
+              }
           },
           error: (error) => {
               console.error('Error sharing post', error);
@@ -287,5 +326,10 @@ export class PostDetailComponent implements OnInit {
       }
   }
 
-  // TODO: Implement logic to view followers/following lists
+  public isFollowingUser(postUser: { _id: string; email: string; role: string }): boolean {
+      if (!this.currentUserId || !this.followingList) {
+          return false;
+      }
+      return this.followingList.some(follow => follow.following._id === postUser._id);
+  }
 }

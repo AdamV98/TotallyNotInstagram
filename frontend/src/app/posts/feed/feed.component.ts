@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { tap } from 'rxjs/operators';
+import { combineLatest } from 'rxjs';
 
 interface IPost {
   _id: string;
@@ -18,6 +19,14 @@ interface IPost {
   status: 'pending' | 'approved' | 'rejected';
 }
 
+interface IFollower {
+  _id: string;
+  follower: { _id: string; email: string; role: string };
+  following: { _id: string; email: string; role: string };
+  createdAt: string;
+}
+
+
 @Component({
   selector: 'app-feed',
   standalone: true,
@@ -30,25 +39,44 @@ export class FeedComponent implements OnInit {
   errorMessage: string | null = null;
   currentUserId: string | null = null;
 
+  followingList: IFollower[] = [];
+
   constructor(private contentService: ContentService, private authService: AuthService) { }
 
   ngOnInit(): void {
     this.currentUserId = this.authService.getCurrentUser()?._id || null;
-    this.loadPosts();
+    this.loadFeedData();
   }
 
-  loadPosts(): void {
-    this.errorMessage = null;
-    this.contentService.getAllApprovedPosts().subscribe({
-      next: (posts) => {
-        this.posts = posts;
-        console.log('Loaded approved posts', posts);
-      },
-      error: (error) => {
-        console.error('Error loading posts', error);
-        this.errorMessage = error.message || 'Failed to load posts.'; // Access error.message
-      }
-    });
+  loadFeedData(): void {
+      this.errorMessage = null;
+
+      this.contentService.getAllApprovedPosts().subscribe({
+          next: (posts) => {
+              this.posts = posts;
+              console.log('Loaded approved posts', posts);
+
+              if (this.currentUserId) {
+                  this.loadFollowingList(this.currentUserId);
+              }
+          },
+          error: (error) => {
+              console.error('Error loading posts', error);
+              this.errorMessage = error.message || 'Failed to load posts.';
+          }
+      });
+  }
+
+  loadFollowingList(userId: string): void {
+      this.contentService.getFollowing(userId).subscribe({
+          next: (following) => {
+              this.followingList = following;
+              console.log('Loaded following list', following);
+          },
+          error: (error) => {
+              console.error('Error loading following list', error);
+          }
+      });
   }
 
   hasLiked(post: IPost): boolean {
@@ -56,6 +84,13 @@ export class FeedComponent implements OnInit {
           return false;
       }
       return post.likes.includes(this.currentUserId);
+  }
+
+  isFollowingUser(postUser: { _id: string; email: string; role: string }): boolean {
+      if (!this.currentUserId || !this.followingList) {
+          return false;
+      }
+      return this.followingList.some(follow => follow.following._id === postUser._id);
   }
 
   toggleLike(post: IPost): void {
@@ -94,25 +129,27 @@ export class FeedComponent implements OnInit {
       }
   }
 
-    sharePost(post: IPost): void {
-      if (!this.authService.isLoggedIn()) {
-           console.warn('User not logged in to share posts.');
-           return;
-      }
-      if (!post || !post._id) {
-           console.warn('Post not loaded to share.');
-           return;
+    public sharePost(post: IPost): void {
+      if (!this.authService.isLoggedIn() || !post) {
+          console.warn('User not logged in or post not loaded to share.');
+          return;
       }
       console.log('Sharing post', post._id);
 
-       this.contentService.sharePost(post._id).subscribe({
+      this.contentService.sharePost(post._id).subscribe({
           next: (response) => {
               console.log('Post shared (count incremented)', response);
               post.shareCount = response.shareCount;
-
               const shareableUrl = `${window.location.origin}/shared-posts/${post._id}`;
-              console.log('Shareable URL:', shareableUrl);
-              alert(`Shareable URL: ${shareableUrl}`);
+              if (navigator.clipboard) {
+                  navigator.clipboard.writeText(shareableUrl).then(() => {
+                      alert('Shareable URL copied to clipboard!');
+                  }, () => {
+                      alert(`Shareable URL: ${shareableUrl}`);
+                  });
+              } else {
+                  alert(`Shareable URL: ${shareableUrl}`);
+              }
           },
           error: (error) => {
               console.error('Error sharing post', error);

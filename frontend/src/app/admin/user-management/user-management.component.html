@@ -12,9 +12,16 @@
     </div>
     <ul>
       <li *ngFor="let user of users">
-        {{ user.email }} ({{ user.role }})
-        <button (click)="selectUser(user)">View/Edit</button>
-        <button (click)="deleteUser(user._id)">Delete</button>
+        <div>
+          <a [routerLink]="['/users', user._id]">
+            {{ user.email }}
+          </a>
+          ({{ user.role }})
+        </div>
+        <div class="user-actions">
+          <button (click)="selectUser(user)">View/Edit</button>
+          <button class="delete-btn" (click)="deleteUser(user._id)">Delete</button>
+        </div>
       </li>
     </ul>
   </div>
@@ -31,6 +38,6 @@
       </select>
     </div>
     <button (click)="updateUserRole()">Save Role</button>
-    <button (click)="cancelEdit()">Cancel</button>
+    <button type="button" (click)="cancelEditProfile()">Cancel</button>
   </div>
 </div>

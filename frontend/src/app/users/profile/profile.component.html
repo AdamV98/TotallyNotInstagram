@@ -67,15 +67,16 @@
   </div>
    <div *ngFor="let post of userPosts" class="post-card">
        <div *ngIf="editingPost?._id !== post._id">
-           <h4>
-               {{ post.caption || 'Untitled Post' }}
-               <span *ngIf="post.user.role === 'influencer'" style="font-weight: bold; color: purple;">(Influencer)</span>
-           </h4>
+           <h3>
+                Post by {{ post.user.email }}
+                <span *ngIf="post.user.role === 'influencer'" style="font-weight: bold; color: purple;">(Influencer)</span>
+            </h3>
             <img *ngIf="post.mediaType === 'image'" [src]="'http://localhost:5000/' + post.mediaUrl" alt="Post Image">
-           <video *ngIf="post.mediaType === 'video'" controls [src]="'http://localhost:5000/' + post.mediaUrl"></video>
+            <video *ngIf="post.mediaType === 'video'" controls [src]="'http://localhost:5000/' + post.mediaUrl"></video>
+            <p>{{ post.caption }}</p>
             <p>Status: {{ post.status }}</p>
             <p>Likes: {{ post.likes.length || 0 }} | Shares: {{ post.shareCount || 0 }} | Comments: {{ post.comments.length || 0 }}</p>
-             <a [routerLink]="['/posts', post._id]">View Details</a>
+            <a [routerLink]="['/posts', post._id]">View Details</a>
             <button *ngIf="canEditDeletePost(post)" (click)="startEditingPost(post)">Edit</button>
             <button *ngIf="canEditDeletePost(post)" (click)="deletePost(post._id)">Delete</button>
        </div>

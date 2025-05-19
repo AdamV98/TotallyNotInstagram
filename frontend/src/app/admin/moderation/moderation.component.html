@@ -17,7 +17,7 @@
     <video *ngIf="post.mediaType === 'video'" controls [src]="'http://localhost:5000/' + post.mediaUrl"></video>
     <p>Caption: {{ post.caption }}</p>
     <p>Status: {{ post.status }}</p>
-    <button (click)="moderatePost(post._id, 'approved')">Approve</button>
-    <button (click)="moderatePost(post._id, 'rejected')">Reject</button>
+    <button class="approve-btn" (click)="moderatePost(post._id, 'approved')">Approve</button>
+    <button class="reject-btn" (click)="moderatePost(post._id, 'rejected')">Reject</button>
   </div>
 </div>
